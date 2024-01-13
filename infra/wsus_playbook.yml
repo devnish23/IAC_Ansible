@@ -1,0 +1,43 @@
+---
+- name: Configure WSUS Server on Windows
+  hosts: your_windows_server
+  gather_facts: no  # Disable gathering facts for Windows hosts
+
+  tasks:
+    - name: Install WSUS role
+      win_feature:
+        name: UpdateServices
+        state: present
+
+    - name: Configure WSUS
+      win_wsus:
+        update_languages:
+          - en
+        update_products:
+          - "Windows Server 2019"
+        content_path: C:\WSUS
+        upstream_server: 'http://windowsupdate.microsoft.com'
+
+    - name: Perform initial synchronization
+      win_wsus:
+        action: synchronize
+        server_url: http://{{ ansible_host }}:8530
+
+- name: Schedule WSUS synchronization
+  hosts: your_windows_server
+  gather_facts: no
+
+  tasks:
+    - name: Schedule synchronization
+      win_scheduled_task:
+        name: "WSUS Synchronization"
+        description: "Scheduled WSUS synchronization"
+        actions:
+          - executable: 'C:\Windows\system32\Wuauclt.exe'
+            arguments: '/detectnow'
+        triggers:
+          - at: '{{ ansible_date_time.date }}T{{ ansible_date_time.time }}'
+            repeat_every: 1
+            repeat_interval: minutes
+            state: present
+

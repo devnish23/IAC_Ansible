@@ -1,0 +1,7 @@
+---
+ - name: ping dynamic RHEL inventory
+   hosts: redhat
+   
+   tasks:
+     - name: ping dynamic inventory
+       ping:

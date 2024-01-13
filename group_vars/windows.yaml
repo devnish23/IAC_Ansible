@@ -1,0 +1,7 @@
+ansible_user: Administrator
+#ansible_password: K
+ansible_password: "R@inf0r3st132330" 
+ansible_port: 5986
+ansible_connection: winrm
+ansible_winrm_server_cert_validation: ignore
+ansible_winrm_transport: basic 

@@ -1,0 +1,7 @@
+---
+ - name: ping dynamic RHEL inventory
+   hosts: windows
+   
+   tasks:
+     - name: ping dynamic inventory
+       win_ping:

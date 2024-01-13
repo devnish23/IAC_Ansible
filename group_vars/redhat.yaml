@@ -1,0 +1,5 @@
+ansible_ssh_private_key_file: Linux_KeyPair.pem
+ansible_ssh_user: ec2-user
+#ansible_ssh_user: ansibleadm
+#ansible_ssh_password: R@inf0r3st132330 
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
