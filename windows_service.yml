@@ -1,0 +1,30 @@
+---
+- name: Check Windows Service Status
+  hosts: windows
+  gather_facts: false
+  vars_files:
+    - group_vars/windows.yml
+  
+  tasks:
+    - name: Get Service Status
+      ansible.windows.win_service_info: 
+        name: "Tenable Nessus Agent" 
+      register: service_info
+      ignore_errors: yes
+
+    - name: Display Service Status
+      debug:
+        msg: "The status of the Tenable Nessus Agent  service is {{ service_info.status }}"
+
+    - name: Debug output
+      debug:
+        var: service_info.stdout_lines
+
+    - name: Generate HTML from template
+      template:
+         src: template.html.j2
+         dest: output.html
+      vars:
+        command_result: "{{ service_info.stdout }}"
+
+
