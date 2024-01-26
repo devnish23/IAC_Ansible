@@ -1,0 +1,12 @@
+[info] [agent] Failed to open global database.
+[info] [agent] Data may be incomplete.
+Running: No
+Linked to: None
+Link status: Not linked to a manager
+Proxy: None
+Plugin set: (null)
+Scanning: No (0 jobs pending, 0 smart scan configs) 
+Scans run today: 0 of 10 limit
+Last scanned: Never
+Last connect: Never
+Last connection attempt: Never

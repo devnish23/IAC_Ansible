@@ -1,0 +1,64 @@
+---
+- name: Run a command and generate HTML report
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: scan_info
+      ignore_errors: true
+
+    - name: Generate HTML Table
+      set_fact:
+        html_table: |
+          <html>
+          <head>
+            <style>
+              table {
+                font-family: Arial, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+              }
+              th, td {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+              .running-no {
+                color: red;  /* Add this style for red color */
+              }
+            </style>
+          </head>
+          <body>
+            <h2>Scan Information - {{ inventory_hostname }}</h2>
+            <table>
+              {% for line in scan_info.stdout_lines %}
+                {% if line | regex_search('^(.*?):(.*)$') %}
+                  {% set key, value = line.split(':') %}
+                  <tr {% if key == 'Running' and value | trim == 'No' %}class="running-no"{% endif %}>
+                    <th>{{ key | trim }}</th>
+                    <td>{{ value | trim }}</td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </table>
+          </body>
+          </html>
+      delegate_to: localhost
+
+    - name: Save HTML Table to File
+      copy:
+        content: "{{ html_table }}"
+        dest: "/tmp/html_output_{{ inventory_hostname }}.html"
+      delegate_to: localhost
+
+    - name: Assemble HTML files into a single file
+      assemble:
+        src: "/tmp/"
+        dest: "/tmp/html_output_all_hosts.html"
+        regexp: "html_output_.*.html"
+
