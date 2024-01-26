@@ -1,0 +1,56 @@
+---
+- name: Run a command and generate HTML report
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: scan_info
+      ignore_errors: true
+
+    - name: Save output to text file
+      copy:
+        content: "{{ scan_info.stdout | join('\n') }}"
+        dest: "/tmp/{{ inventory_hostname }}_output.txt"
+
+    - name: Display text file content
+      command: cat "/tmp/{{ inventory_hostname }}_output.txt"
+      register: text_file_content
+      changed_when: false
+
+    - name: Generate HTML Table
+      set_fact:
+        html_table: |
+          <html>
+          <head>
+            <style>
+              table {
+                font-family: Arial, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+              }
+              th, td {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+            </style>
+          </head>
+          <body>
+            <h2>Scan Information - {{ inventory_hostname }}</h2>
+            <pre>{{ text_file_content.stdout }}</pre>
+          </body>
+          </html>
+      delegate_to: localhost
+
+    - name: Save HTML Table to File
+      copy:
+        content: "{{ html_table }}"
+        dest: "/etc/ansible/html_output_all_hosts.html"
+      delegate_to: localhost
+      run_once: true
+

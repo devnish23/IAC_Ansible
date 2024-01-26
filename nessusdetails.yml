@@ -1,0 +1,15 @@
+---
+- name: Run a command and print output
+  hosts: all 
+  gather_facts: true
+
+  tasks:
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: command_output
+      ignore_errors: true
+
+    - name: Print the command output
+      debug:
+        var: command_output.stdout_lines
+

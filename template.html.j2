@@ -1,13 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Command Output</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
 </head>
 <body>
-    <h1>Command Output:</h1>
-    <pre>
-        {{ command_result.stdout | to_nice_json }}
-    </pre>
+
+<h2>Ansible Output</h2>
+
+<table>
+  <tr>
+    <th>Attribute</th>
+    <th>Value</th>
+  </tr>
+  <tr>
+    <td>Running</td>
+    <td>Yes</td>
+  </tr>
+  <tr>
+    <td>Linked to</td>
+    <td>None</td>
+  </tr>
+  <tr>
+    <td>Link status</td>
+    <td>Not linked to a manager</td>
+  </tr>
+  <tr>
+    <td>Proxy</td>
+    <td>None</td>
+  </tr>
+  <tr>
+    <td>Plugin set</td>
+    <td>(null)</td>
+  </tr>
+  <tr>
+    <td>Scanning</td>
+    <td>No (0 jobs pending, 0 smart scan configs)</td>
+  </tr>
+  <tr>
+    <td>Scans run today</td>
+    <td>0 of 10 limit</td>
+  </tr>
+  <tr>
+    <td>Last scanned</td>
+    <td>Never</td>
+  </tr>
+  <tr>
+    <td>Last connect</td>
+    <td>Never</td>
+  </tr>
+  <tr>
+    <td>Last connection attempt</td>
+    <td>Never</td>
+  </tr>
+</table>
+
 </body>
 </html>
 
