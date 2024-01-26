@@ -43,11 +43,11 @@
                 {% for line in scan_info.stdout_lines %}
                   {% if line | regex_search('^(.*?):(.*)$') %}
                     {% set key, value = line.split(':') %}
-                    <tr {% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 %}class="running-no"{% endif %}>
+                    <tr {% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 or key == 'Scanning' and value | trim == 'No' or key == 'Last scanned' and value | trim == 'Never' or key == 'Last connect' and value | trim == 'Never' or key == 'Last connection attempt' and value | trim == 'Never' or key == 'Linked to' and value | trim == 'None'%}class="running-no"{% endif %}>
                       <td>{{ inventory_hostname }}</td>
                       <td>{{ key | trim }}</td>
                       <td>{{ value | trim }}</td>
-                      <td>{% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 %}"Not OK <br> Restart service using /bin/systemctl restart nessusagent.service <br> check with Nessus Team after restart" {% else %}OK{% endif %}</td>
+                      <td>{% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 or key == 'Scanning' and value | trim == 'No' or key == 'Last scanned' and value | trim == 'Never' or key == 'Last connect' and value | trim == 'Never' or key == 'Last connection attempt' and value | trim == 'Never' or key == 'Linked to' and value | trim == 'None'%}"Not OK <br> Restart service using /bin/systemctl restart nessusagent.service <br> check with Nessus Team after restart" {% else %}OK{% endif %}</td>
                     </tr>
                   {% endif %}
                 {% endfor %}
