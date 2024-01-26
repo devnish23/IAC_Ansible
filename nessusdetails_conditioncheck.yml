@@ -1,0 +1,71 @@
+---
+- name: Run a command and generate HTML report
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: scan_info
+      ignore_errors: true
+
+    - name: Generate HTML Table
+      set_fact:
+        html_table: |
+          <html>
+          <head>
+            <style>
+              table {
+                font-family: Arial, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+              }
+              th, td {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+              .running-no {
+                color: red;  /* Add this style for red color */
+              }
+            </style>
+          </head>
+          <body>
+            <table>
+              <tr>
+                <th>Hostname</th>
+                <th>Key</th>
+                <th>Value</th>
+                <th>Status</th>
+                {% for line in scan_info.stdout_lines %}
+                  {% if line | regex_search('^(.*?):(.*)$') %}
+                    {% set key, value = line.split(':') %}
+                    <tr {% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 %}class="running-no"{% endif %}>
+                      <td>{{ inventory_hostname }}</td>
+                      <td>{{ key | trim }}</td>
+                      <td>{{ value | trim }}</td>
+                      <td>{% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 %}"Not OK <br> Restart service using /bin/systemctl restart nessusagent.service <br> check with Nessus Team after restart" {% else %}OK{% endif %}</td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+            </table>
+          </body>
+          </html>
+      delegate_to: localhost
+
+    - name: Save HTML Table to File
+      copy:
+        content: "{{ html_table }}"
+        dest: "/tmp/html_output_{{ inventory_hostname }}.html"
+      delegate_to: localhost
+
+    - name: Assemble HTML files into a single file with current date
+      assemble:
+        src: "/tmp/"
+        dest: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}.html"
+        regexp: "html_output_.*.html"
+
