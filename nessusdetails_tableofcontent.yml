@@ -9,12 +9,9 @@
       register: scan_info
       ignore_errors: true
 
-    - name: Remove existing HTML files
-      file:
-        path: "/tmp/html_output_*.html"
-        state: absent
-      delegate_to: localhost
-      ignore_errors: true
+    - name: Set initial counter
+      set_fact:
+        serial_number: 1
 
     - name: Generate HTML Table
       set_fact:
@@ -56,6 +53,7 @@
                       <td>{{ value | trim }}</td>
                       <td>{% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 or key == 'Scanning' and value | trim == 'No' or key == 'Last scanned' and value | trim == 'Never' or key == 'Last connect' and value | trim == 'Never' or key == 'Last connection attempt' and value | trim == 'Never' or key == 'Linked to' and value | trim == 'None'%}"Not OK <br> Restart service using /bin/systemctl restart nessusagent.service <br> check with Nessus Team after restart" {% else %}OK{% endif %}</td>
                     </tr>
+                    {% set serial_number = serial_number + 1 %}
                   {% endif %}
                 {% endfor %}
               </tr>
@@ -69,7 +67,7 @@
         content: "{{ html_table }}"
         dest: "/tmp/html_output_{{ inventory_hostname }}.html"
       delegate_to: localhost
-    
+
     - name: Assemble HTML files into a single file with current date
       assemble:
         src: "/tmp/"

@@ -1,0 +1,101 @@
+---
+- name: Run a command and generate HTML report
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Check if HTML file exists
+      stat:
+        path: "/tmp/html_output_{{ inventory_hostname }}.html"
+      register: html_file
+
+    - name: Remove HTML file if it exists
+      command: "rm /tmp/html_output_{{ inventory_hostname }}.html"
+      when: html_file.stat.exists
+
+    - name: Remove duplicates in html_output_all_hosts
+      shell: "awk '!a[$0]++' /tmp/html_*.html > /tmp/html_output_all_hosts_unique.html"
+      delegate_to: localhost
+      ignore_errors: true
+
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: scan_info
+      ignore_errors: true
+
+    - name: Generate HTML Table
+      set_fact:
+        html_table: |
+          <html>
+          <head>
+            <style>
+              table {
+                font-family: Arial, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+              }
+              th, td {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+              .running-no {
+                color: red;  /* Add this style for red color */
+              }
+              .toc {
+                font-size: 18px;
+              }
+              .toc a {
+                text-decoration: none;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="toc">
+              <h2>Table of Contents</h2>
+              <ul>
+                {% for host in ansible_play_hosts %}
+                  <li><a href="#{{ host }}">{{ host }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% for host in ansible_play_hosts %}
+              <div id="{{ host }}">
+                <table>
+                  <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                  </tr>
+                  {% for line in hostvars[host].scan_info.stdout_lines %}
+                    {% if line | regex_search('^(.*?):(.*)$') %}
+                      {% set key, value = line.split(':') %}
+                      <tr {% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 or key == 'Scanning' and value | trim == 'No' or key == 'Last scanned' and value | trim == 'Never' or key == 'Last connect' and value | trim == 'Never' or key == 'Last connection attempt' and value | trim == 'Never' or key == 'Linked to' and value | trim == 'None'%}class="running-no"{% endif %}>
+                        <td>{{ key | trim }}</td>
+                        <td>{{ value | trim }}</td>
+                        <td>{% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 or key == 'Scanning' and value | trim == 'No' or key == 'Last scanned' and value | trim == 'Never' or key == 'Last connect' and value | trim == 'Never' or key == 'Last connection attempt' and value | trim == 'Never' or key == 'Linked to' and value | trim == 'None'%}"Not OK <br> Restart service using /bin/systemctl restart nessusagent.service <br> check with Nessus Team after restart" {% else %}OK{% endif %}</td>
+                      </tr>
+                    {% endif %}
+                  {% endfor %}
+                </table>
+              </div>
+            {% endfor %}
+          </body>
+          </html>
+#      delegate_to: localhost
+
+    - name: Save HTML Table to File
+      copy:
+        content: "{{ html_table }}"
+        dest: "/tmp/html_output_{{ inventory_hostname }}.html"
+      delegate_to: localhost
+
+    - name: Assemble HTML files into a single file with current date
+      assemble:
+        src: "/tmp/"
+        dest: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}.html"
+        regexp: "html_output_.*.html"
+

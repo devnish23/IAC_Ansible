@@ -9,12 +9,18 @@
       register: scan_info
       ignore_errors: true
 
-    - name: Remove existing HTML files
+    - name: Remove HTML files in /tmp directory
+      find:
+        paths: "/tmp/"
+        patterns: "*.html"
+      register: html_files
+
+    - name: Remove HTML files
       file:
-        path: "/tmp/html_output_*.html"
+        path: "{{ item.path }}"
         state: absent
-      delegate_to: localhost
-      ignore_errors: true
+      with_items: "{{ html_files.files }}"
+      when: html_files.matched > 0
 
     - name: Generate HTML Table
       set_fact:
