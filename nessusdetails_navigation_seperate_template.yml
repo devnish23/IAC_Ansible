@@ -1,0 +1,35 @@
+---
+- name: Run a command and generate HTML report
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: scan_info
+      ignore_errors: true
+
+    - name: Remove HTML files in /tmp directory
+      find:
+        paths: "/tmp/"
+        patterns: "*.html"
+      register: html_files
+
+    - name: Remove HTML files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ html_files.files }}"
+      when: html_files.matched > 0
+
+    - name: Generate HTML Table from Template
+      template:
+        src: /etc/ansible/template/nessusreport.html.j2
+        dest: "/tmp/html_output_{{ inventory_hostname }}.html"
+      delegate_to: localhost
+
+    - name: Assemble HTML files into a single file with current date
+      assemble:
+        src: "/tmp/"
+        dest: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H') }}.html"
+        regexp: "html_output_.*.html"

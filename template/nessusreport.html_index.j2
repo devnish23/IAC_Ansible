@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .running-no {
+      color: red;  /* Add this style for red color */
+    }
+    .nav-bar {
+      background-color: #333;
+      overflow: hidden;
+    }
+    .nav-bar a {
+      float: left;
+      display: block;
+      color: #f2f2f2;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <h2>Table of Contents</h2>
+    <ul>
+      {% for host in ansible_play_hosts %}
+        <li><a href="#{{ host }}">{{ host }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  {% for host in ansible_play_hosts %}
+    <div id="{{ host }}">
+      <h2>{{ host }}</h2>
+      {% set host_data = {} %}
+      {% for line in hostvars[host].scan_info.stdout_lines %}
+        {% if line | regex_search('^(.*?):(.*)$') %}
+          {% set key, value = line.split(':') %}
+          {% set host_data = host_data | combine({ key | trim: value | trim }) %}
+        {% endif %}
+      {% endfor %}
+      <table>
+        <tr>
+          <th>Key</th>
+          <th>Value</th>
+          <th>Status</th>
+        </tr>
+        {% for key, value in host_data.items() %}
+          <tr {% if key == 'Running' and value != 'Yes' or key == 'Link status' and value|int == 0 or key == 'Scanning' and value == 'No' or key == 'Last scanned' and value == 'Never' or key == 'Last connect' and value == 'Never' or key == 'Last connection attempt' and value == 'Never' or key == 'Linked to' and value == 'None'%}class="running-no"{% endif %}>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+            <td>{% if key == 'Running' and value != 'Yes' or key == 'Link status' and value|int == 0 or key == 'Scanning' and value == 'No' or key == 'Last scanned' and value == 'Never' or key == 'Last connect' and value == 'Never' or key == 'Last connection attempt' and value == 'Never' or key == 'Linked to' and value == 'None'%}"Not OK <br> Restart service using /bin/systemctl restart nessusagent.service <br> check with Nessus Team after restart" {% else %}OK{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% endfor %}
+</body>
+</html>

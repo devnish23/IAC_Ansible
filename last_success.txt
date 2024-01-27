@@ -1,0 +1,2 @@
+ansible-playbook -i /etc/ansible/inventory/localinventory.ini /etc/ansible/nessusdetails_navigation_seperate_template.yml
+last successful template file template/nessusreport.html.j2
