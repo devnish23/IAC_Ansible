@@ -1,0 +1,5 @@
+- name: Run NessusAgent command if RPM is installed
+  command: "/opt/nessus_agent/sbin/nessuscli agent status"
+  register: nessus_agent_status
+  ignore_errors: true
+  when: rpm_check.rc == 0

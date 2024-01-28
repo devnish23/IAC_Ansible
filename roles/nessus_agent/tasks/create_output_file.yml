@@ -1,0 +1,6 @@
+# roles/nessus_agent/tasks/create_output_file.yml
+- name: Create output file
+  template:
+    src: nessuscli_output.txt.j2
+    dest: "/tmp/nessuscli_output_success_{{ inventory_hostname }}.txt"
+  when: rpm_check.rc == 0

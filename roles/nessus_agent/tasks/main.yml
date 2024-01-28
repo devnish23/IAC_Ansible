@@ -1,0 +1,4 @@
+# roles/nessus_agent/tasks/main.yml
+- include_tasks: check_rpm.yml
+- include_tasks: run_command.yml
+- include_tasks: create_output_file.yml

@@ -1,0 +1,5 @@
+# roles/nessus_agent/tasks/check_rpm.yml
+- name: Check if NessusAgent package is installed
+  command: "rpm -q NessusAgent"
+  register: rpm_check
+  ignore_errors: true

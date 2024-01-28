@@ -1,0 +1,99 @@
+---
+- name: Check NessusAgent RPM and Status
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Check if NessusAgent package is installed
+      command: "rpm -q NessusAgent"
+      register: rpm_check
+      ignore_errors: true
+
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: nessus_agent_status 
+      ignore_errors: true
+
+    - name: Remove HTML files in /tmp directory
+      find:
+        paths: "/tmp/"
+        patterns: "*.html"
+      register: html_files
+
+    - name: Remove HTML files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ html_files.files }}"
+      when: html_files.matched > 0
+
+    - name: Generate HTML Table
+      set_fact:
+        html_table: |
+          <html>
+          <head>
+            <style>
+              table {
+                font-family: Arial, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+              }
+              th, td {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+              .running-no {
+                color: red;  /* Add this style for red color */
+              }
+            </style>
+          </head>
+            {% if rpm_check.rc == 0 %}
+          <body>
+            <h2>NessusAgent Hosts</h2>
+              <table>
+                <tr>
+                  <th>Hostname</th>
+                  <th>Key</th>
+                  <th>Value</th>
+                </tr>
+                {% for line in nessus_agent_status.stdout_lines %}
+                  {% if line | regex_search('^(.*?):(.*)$') %}
+                    {% set key, value = line.split(':') %}
+                    <tr {% if key == 'Running' and value | trim != 'Yes' or key == 'Link status' and value | trim|int == 0 or key == 'Scanning' and value | trim == 'No' or key == 'Last scanned' and value | trim == 'Never' or key == 'Last connect' and value | trim == 'Never' or key == 'Last connection attempt' and value | trim == 'Never' or key == 'Linked to' and value | trim == 'None'%}class="running-no"{% endif %}>
+                      <td>{{ inventory_hostname }}</td>
+                      <td>{{ key | trim }}</td>
+                      <td>{{ value | trim }}</td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              </table>
+            {% else %}
+              <table>
+               <tr>
+                 <th> Hostname</th>
+                 <th> Agent status</th>
+               </tr>
+              <tr>
+              <td>{{ inventory_hostname }}</td>
+              <td> Agent not installed in host</td>
+              </tr>
+            {% endif %}
+          </body>
+          </html>
+
+    - name: Save HTML Table to File
+      copy:
+        content: "{{ html_table }}"
+        dest: "/tmp/html_output_{{ inventory_hostname }}.html"
+      delegate_to: localhost
+
+    - name: Assemble HTML files into a single file with the current date
+      assemble:
+        src: "/tmp/"
+        dest: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}.html"
+        regexp: "html_output_.*.html"
+

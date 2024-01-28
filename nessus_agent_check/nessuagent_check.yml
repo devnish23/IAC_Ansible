@@ -1,0 +1,46 @@
+---
+- name: Run a command and print output
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Run the command
+      command: "/opt/nessus_agent/sbin/nessuscli agent status"
+      register: command_output
+      ignore_errors: true
+
+    - name: Print the command output
+      debug:
+        var: command_output.stdout_lines
+    - name: Ensure the output file directory exists
+      file:
+        path: "/tmp/html_output_{{ inventory_hostname }}.txt"
+        state: touch 
+
+    - name: Create a text file with hostname in each line
+      lineinfile:
+        path: "/tmp/html_output_{{ inventory_hostname }}.txt"
+        line: "{{ inventory_hostname }}: {{ item }}"
+      loop: "{{ command_output.stdout_lines }}"
+
+    - name: Fetch the output file to Ansible control node
+      fetch:
+        src: "/tmp/html_output_{{ inventory_hostname }}.txt"
+        dest: "/tmp/"
+        flat: yes
+
+    - name: Assemble HTML files into a single file with current date
+      assemble:
+        src: "/tmp/"
+        dest: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H') }}.txt"
+        regexp: "html_output_.*.txt"
+      delegate_to: localhost
+
+    - name: Read file content
+      local_action: 
+        module: slurp
+        src: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H') }}.txt"
+      register: file_content
+
+    - name: Print to console
+      debug: msg = "{{file_content.stdout}}"

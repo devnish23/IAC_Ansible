@@ -1,0 +1,4 @@
+# roles/nessus_agent/templates/nessuscli_output.txt.j2
+{% for line in nessus_agent_status.stdout_lines %}
+{{ line }}
+{% endfor %}

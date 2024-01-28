@@ -1,0 +1,6 @@
+---
+- name: Run NessusAgent tasks
+  hosts: all
+  gather_facts: true
+  roles:
+    - nessus_agent
