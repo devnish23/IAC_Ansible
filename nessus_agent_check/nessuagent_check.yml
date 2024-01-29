@@ -37,10 +37,12 @@
       delegate_to: localhost
 
     - name: Read file content
-      local_action: 
-        module: slurp
-        src: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H') }}.txt"
+      local_action:  
+         command "cat /tmp/html_output_all_hosts_*.txt"
+#        module: slurp
+#        src: "/tmp/html_output_all_hosts_{{ lookup('pipe', 'date +%Y%m%d%H') }}.txt"
       register: file_content
+      delegate_to: localhost
 
     - name: Print to console
       debug: msg = "{{file_content.stdout}}"
